@@ -1,1 +1,1 @@
-initial draft for sender
+shared memory ring buffer in c
