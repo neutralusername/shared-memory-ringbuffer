@@ -26,23 +26,23 @@ int main(int argc, char *argv[]){
 
 
 
-    key_t senderKey = ftok("sender", bufferSize);
-    if (senderKey == -1) {
+    key_t senderLockKey = ftok("sender", bufferSize);
+    if (senderLockKey == -1) {
         printf("ftok failed\n");
         exit(1);
     }
-    key_t bufferKey = ftok("buffer", bufferSize);
-    if (bufferKey == -1) {
+    key_t sharedMemoryRingbufferKey = ftok("buffer", bufferSize);
+    if (sharedMemoryRingbufferKey == -1) {
         printf("ftok failed\n");
         exit(1);
     }
-    key_t senderKey2 = ftok("sender2", bufferSize);
-    if (senderKey2 == -1) {
+    key_t writeableElementsKey = ftok("sender2", bufferSize);
+    if (writeableElementsKey == -1) {
         printf("ftok failed\n");
         exit(1);
     }
-    key_t receiverKey2 = ftok("receiver2", bufferSize);
-    if (receiverKey2 == -1) {
+    key_t readableElementsKey = ftok("receiver2", bufferSize);
+    if (readableElementsKey == -1) {
         printf("ftok failed\n");
         exit(1);
     }
@@ -51,10 +51,10 @@ int main(int argc, char *argv[]){
 
 
 
-    int senderLockSemId = semget(senderKey, 1, IPC_EXCL | IPC_CREAT | 0666 );
+    int senderLockSemId = semget(senderLockKey, 1, IPC_EXCL | IPC_CREAT | 0666 );
     if (senderLockSemId == -1) { 
         if (errno == EEXIST) { 
-            senderLockSemId = semget(senderKey, 1, 0666); 
+            senderLockSemId = semget(senderLockKey, 1, 0666); 
         } else {
             printf("semget failed\n");
             exit(1);
@@ -77,10 +77,10 @@ int main(int argc, char *argv[]){
 
 
 
-    int senderIndexShmId = shmget(senderKey, sizeof(int), IPC_EXCL | IPC_CREAT | 0666);
+    int senderIndexShmId = shmget(senderLockKey, sizeof(int), IPC_EXCL | IPC_CREAT | 0666);
     if (senderIndexShmId == -1) {
         if (errno == EEXIST) { 
-            senderIndexShmId = shmget(senderKey, sizeof(int), 0666); //get the senderIndex
+            senderIndexShmId = shmget(senderLockKey, sizeof(int), 0666); //get the senderIndex
         } else {
             printf("shmget failed\n");
             exit(1);
@@ -96,48 +96,48 @@ int main(int argc, char *argv[]){
 
 
 
-    int bufferShmId = shmget(bufferKey, bufferSize * sizeof(int), IPC_EXCL | IPC_CREAT | 0666);
-    if (bufferShmId == -1) {
+    int sharedMemoryRingbufferShmId = shmget(sharedMemoryRingbufferKey, bufferSize * sizeof(int), IPC_EXCL | IPC_CREAT | 0666);
+    if (sharedMemoryRingbufferShmId == -1) {
         if (errno == EEXIST) { 
-            bufferShmId = shmget(bufferKey, bufferSize * sizeof(int), 0666); 
+            sharedMemoryRingbufferShmId = shmget(sharedMemoryRingbufferKey, bufferSize * sizeof(int), 0666); 
         } else {
             printf("shmget failed\n");
             exit(1);
         }
     } else { 
-        int *buffer = shmat(bufferShmId, NULL, 0);
+        int *buffer = shmat(sharedMemoryRingbufferShmId, NULL, 0);
         for (int i = 0; i < bufferSize; i++) {
             buffer[i] = 0;
         }
         shmdt(buffer);
     } 
-    int *buffer = shmat(bufferShmId, NULL, 0);
+    int *buffer = shmat(sharedMemoryRingbufferShmId, NULL, 0);
 
 
 
 
 
-    int senderSemId2 = semget(senderKey2, 1, IPC_EXCL | IPC_CREAT | 0666 );
-    if (senderSemId2 == -1) { 
+    int writeableElementsSemId = semget(writeableElementsKey, 1, IPC_EXCL | IPC_CREAT | 0666 );
+    if (writeableElementsSemId == -1) { 
         if (errno == EEXIST) { 
-            senderSemId2 = semget(senderKey2, 1, 0666); 
+            writeableElementsSemId = semget(writeableElementsKey, 1, 0666); 
         } else {
             printf("semget failed\n");
             exit(1);
         }
     } else { 
-        semctl(senderSemId2, 0, SETVAL, bufferSize); 
+        semctl(writeableElementsSemId, 0, SETVAL, bufferSize); 
     }
-    int receiverSemId2 = semget(receiverKey2, 1, IPC_EXCL | IPC_CREAT | 0666 );
-    if (receiverSemId2 == -1) { 
+    int readableElementsSemId = semget(readableElementsKey, 1, IPC_EXCL | IPC_CREAT | 0666 );
+    if (readableElementsSemId == -1) { 
         if (errno == EEXIST) { 
-            receiverSemId2 = semget(receiverKey2, 1, 0666); 
+            readableElementsSemId = semget(readableElementsKey, 1, 0666); 
         } else {
             printf("semget failed\n");
             exit(1);
         }
     } else { 
-        semctl(receiverSemId2, 0, SETVAL, 0); 
+        semctl(readableElementsSemId, 0, SETVAL, 0); 
     }
 
 
@@ -146,15 +146,15 @@ int main(int argc, char *argv[]){
 
     int c;
     while((c = getchar()) != EOF) {
-        struct sembuf sembuf1 = {.sem_num = 0, .sem_op = -1, .sem_flg = 0};
-        if (semop(senderSemId2, &sembuf1, 1) == -1) {
+        struct sembuf writeableElementsDecrease = {.sem_num = 0, .sem_op = -1, .sem_flg = 0};
+        if (semop(writeableElementsSemId, &writeableElementsDecrease, 1) == -1) {
             printf("semop lock failed\n");
             exit(1);
         }
         buffer[*senderIndex] = c;
         *senderIndex = (*senderIndex + 1) % bufferSize;
-        struct sembuf sembuf2 = {.sem_num = 0, .sem_op = 1, .sem_flg = 0};
-        if (semop(receiverSemId2, &sembuf2, 1) == -1) {
+        struct sembuf readableElementsIncrease = {.sem_num = 0, .sem_op = 1, .sem_flg = 0};
+        if (semop(readableElementsSemId, &readableElementsIncrease, 1) == -1) {
             printf("semop unlock failed\n");
             exit(1);
         }
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]){
 
     buffer[*senderIndex] = EOF;
     struct sembuf sembuf2 = {.sem_num = 0, .sem_op = 1, .sem_flg = 0};
-    if (semop(receiverSemId2, &sembuf2, 1) == -1) {
+    if (semop(readableElementsSemId, &sembuf2, 1) == -1) {
         printf("semop unlock failed\n");
         exit(1);
     }
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]){
     shmdt(buffer);  
 
     semctl(senderLockSemId, 0, IPC_RMID, 0);
-    semctl(senderSemId2, 0, IPC_RMID, 0);
+    semctl(writeableElementsSemId, 0, IPC_RMID, 0);
 
     return 0;
 }
