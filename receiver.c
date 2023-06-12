@@ -95,22 +95,22 @@ int main(int argc, char *argv[]){
 
 
 
-    int bufferShmId = shmget(bufferKey, bufferSize * sizeof(char), IPC_EXCL | IPC_CREAT | 0666);
+    int bufferShmId = shmget(bufferKey, bufferSize * sizeof(int), IPC_EXCL | IPC_CREAT | 0666);
     if (bufferShmId == -1) {
         if (errno == EEXIST) { //buffer already exists
-            bufferShmId = shmget(bufferKey, bufferSize * sizeof(char), 0666); //get the buffer
+            bufferShmId = shmget(bufferKey, bufferSize * sizeof(int), 0666); //get the buffer
         } else {
             printf("shmget failed\n");
             exit(1);
         }
     } else { //if buffer was just created Set its value to 0 so that someone can start sending
-        char *buffer = shmat(bufferShmId, NULL, 0);
+        int *buffer = shmat(bufferShmId, NULL, 0);
         for (int i = 0; i < bufferSize; i++) {
             buffer[i] = 0;
         }
         shmdt(buffer);
     } 
-    char *buffer = shmat(bufferShmId, NULL, 0);
+    int *buffer = shmat(bufferShmId, NULL, 0);
 
 
     
@@ -143,7 +143,33 @@ int main(int argc, char *argv[]){
 
    
 
+    while(1) {
+        struct sembuf sembufLock = {.sem_num = 0, .sem_op = -1, .sem_flg = 0};
+        if (semop(receiverSemId2, &sembufLock, 1) == -1) {
+            printf("semop lock failed\n");
+            exit(1);
+        }
 
+        int c = buffer[*receiverIndex];
+        if (c == EOF) {
+            break;
+        }
+        
+        *receiverIndex = (*receiverIndex + 1) % bufferSize;
+        printf("%c", c);
+        fflush(stdout);
+
+        struct sembuf sembufUnlock = {.sem_num = 0, .sem_op = 1, .sem_flg = 0};
+        if (semop(senderSemId2, &sembufUnlock, 1) == -1) {
+            printf("semop unlock failed\n");
+            exit(1);
+        }
+
+        
+    }
+
+    shmdt(receiverIndex);
+    shmdt(buffer);
 
 
 
@@ -153,7 +179,6 @@ int main(int argc, char *argv[]){
         printf("semop unlock failed\n");
         exit(1);
     }
-
 
 
    
