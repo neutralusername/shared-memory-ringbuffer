@@ -36,11 +36,16 @@ int main(int argc, char *argv[]){
         printf("ftok failed\n");
         exit(1);
     }
-    if (bufferKey == receiverKey) {
-        printf("bufferKey and receiverKey are the same\n");
+    key_t senderKey2 = ftok("sender2", bufferSize);
+    if (senderKey2 == -1) {
+        printf("ftok failed\n");
         exit(1);
     }
-
+    key_t receiverKey2 = ftok("receiver2", bufferSize);
+    if (receiverKey2 == -1) {
+        printf("ftok failed\n");
+        exit(1);
+    }
 
 
 
@@ -111,17 +116,33 @@ int main(int argc, char *argv[]){
 
 
 
-    int bufferSemId = semget(bufferKey, 1, IPC_EXCL | IPC_CREAT | 0666 );
-    if (bufferSemId == -1) { 
+
+
+
+      int senderSemId2 = semget(senderKey2, 1, IPC_EXCL | IPC_CREAT | 0666 );
+    if (senderSemId2 == -1) { 
         if (errno == EEXIST) { 
-            bufferSemId = semget(bufferKey, 1, 0666); 
+            senderSemId2 = semget(senderKey2, 1, 0666); 
         } else {
             printf("semget failed\n");
             exit(1);
         }
     } else { 
-        semctl(bufferSemId, 0, SETVAL, bufferSize); //number of free spaces in buffer
+        semctl(senderSemId2, 0, SETVAL, bufferSize); //number of free spaces in buffer
     }
+
+    int receiverSemId2 = semget(receiverKey2, 1, IPC_EXCL | IPC_CREAT | 0666 );
+    if (receiverSemId2 == -1) { 
+        if (errno == EEXIST) { 
+            receiverSemId2 = semget(receiverKey2, 1, 0666); 
+        } else {
+            printf("semget failed\n");
+            exit(1);
+        }
+    } else { 
+        semctl(receiverSemId2, 0, SETVAL, 0); //number of free spaces in buffer
+    }
+
 
 
    

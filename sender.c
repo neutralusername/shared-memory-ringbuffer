@@ -141,6 +141,12 @@ int main(int argc, char *argv[]){
         semctl(receiverSemId2, 0, SETVAL, 0); //number of free spaces in buffer
     }
 
+
+
+
+
+
+
     char c;
     while((c = getchar()) != EOF) {
         struct sembuf sembuf1 = {.sem_num = 0, .sem_op = -1, .sem_flg = 0};
