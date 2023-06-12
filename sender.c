@@ -53,13 +53,13 @@ int main(int argc, char *argv[]){
 
     int senderLockSemId = semget(senderKey, 1, IPC_EXCL | IPC_CREAT | 0666 );
     if (senderLockSemId == -1) { 
-        if (errno == EEXIST) { //semaphore for sender already exists
-            senderLockSemId = semget(senderKey, 1, 0666); //get the semaphore
+        if (errno == EEXIST) { 
+            senderLockSemId = semget(senderKey, 1, 0666); 
         } else {
             printf("semget failed\n");
             exit(1);
         }
-    } else { //if sender was just created Set its value to 1 so that someone can start sending
+    } else { 
         semctl(senderLockSemId, 0, SETVAL, 1);
     }
 
@@ -79,13 +79,13 @@ int main(int argc, char *argv[]){
 
     int senderIndexShmId = shmget(senderKey, sizeof(int), IPC_EXCL | IPC_CREAT | 0666);
     if (senderIndexShmId == -1) {
-        if (errno == EEXIST) { //senderIndex already exists
+        if (errno == EEXIST) { 
             senderIndexShmId = shmget(senderKey, sizeof(int), 0666); //get the senderIndex
         } else {
             printf("shmget failed\n");
             exit(1);
         }
-    } else { //if senderIndex was just created Set its value to 0 so that someone can start sending
+    } else { 
         int *senderIndex = shmat(senderIndexShmId, NULL, 0);
         *senderIndex = 0;
         shmdt(senderIndex);
@@ -98,13 +98,13 @@ int main(int argc, char *argv[]){
 
     int bufferShmId = shmget(bufferKey, bufferSize * sizeof(int), IPC_EXCL | IPC_CREAT | 0666);
     if (bufferShmId == -1) {
-        if (errno == EEXIST) { //buffer already exists
-            bufferShmId = shmget(bufferKey, bufferSize * sizeof(int), 0666); //get the buffer
+        if (errno == EEXIST) { 
+            bufferShmId = shmget(bufferKey, bufferSize * sizeof(int), 0666); 
         } else {
             printf("shmget failed\n");
             exit(1);
         }
-    } else { //if buffer was just created Set its value to 0 so that someone can start sending
+    } else { 
         int *buffer = shmat(bufferShmId, NULL, 0);
         for (int i = 0; i < bufferSize; i++) {
             buffer[i] = 0;
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]){
             exit(1);
         }
     } else { 
-        semctl(senderSemId2, 0, SETVAL, bufferSize); //number of free spaces in buffer
+        semctl(senderSemId2, 0, SETVAL, bufferSize); 
     }
     int receiverSemId2 = semget(receiverKey2, 1, IPC_EXCL | IPC_CREAT | 0666 );
     if (receiverSemId2 == -1) { 
@@ -137,10 +137,8 @@ int main(int argc, char *argv[]){
             exit(1);
         }
     } else { 
-        semctl(receiverSemId2, 0, SETVAL, 0); //number of free spaces in buffer
+        semctl(receiverSemId2, 0, SETVAL, 0); 
     }
-
-
 
 
 
@@ -178,10 +176,11 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-
     shmdt(senderIndex);
-    shmdt(buffer);
+    shmdt(buffer);  
 
-   
+    semctl(senderLockSemId, 0, IPC_RMID, 0);
+    semctl(senderSemId2, 0, IPC_RMID, 0);
+
     return 0;
 }
