@@ -181,6 +181,9 @@ int main(int argc, char *argv[]){
 
     semctl(receiverLockSemId, 0, IPC_RMID, 0);
     semctl(readableElementsSemId, 0, IPC_RMID, 0);
+
+    shmctl(receiverIndexShmId, IPC_RMID, 0);
+    shmctl(sharedMemoryRingbufferShmId, IPC_RMID, 0);
    
     return 0;
 }

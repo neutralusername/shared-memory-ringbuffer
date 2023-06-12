@@ -182,5 +182,7 @@ int main(int argc, char *argv[]){
     semctl(senderLockSemId, 0, IPC_RMID, 0);
     semctl(writeableElementsSemId, 0, IPC_RMID, 0);
 
+    shmctl(senderIndexShmId, IPC_RMID, 0);  
+
     return 0;
 }
