@@ -128,7 +128,6 @@ int main(int argc, char *argv[]){
     } else { 
         semctl(senderSemId2, 0, SETVAL, bufferSize); //number of free spaces in buffer
     }
-
     int receiverSemId2 = semget(receiverKey2, 1, IPC_EXCL | IPC_CREAT | 0666 );
     if (receiverSemId2 == -1) { 
         if (errno == EEXIST) { 

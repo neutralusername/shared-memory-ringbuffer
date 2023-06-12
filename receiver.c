@@ -113,13 +113,10 @@ int main(int argc, char *argv[]){
     char *buffer = shmat(bufferShmId, NULL, 0);
 
 
+    
 
 
-
-
-
-
-      int senderSemId2 = semget(senderKey2, 1, IPC_EXCL | IPC_CREAT | 0666 );
+    int senderSemId2 = semget(senderKey2, 1, IPC_EXCL | IPC_CREAT | 0666 );
     if (senderSemId2 == -1) { 
         if (errno == EEXIST) { 
             senderSemId2 = semget(senderKey2, 1, 0666); 
@@ -130,7 +127,6 @@ int main(int argc, char *argv[]){
     } else { 
         semctl(senderSemId2, 0, SETVAL, bufferSize); //number of free spaces in buffer
     }
-
     int receiverSemId2 = semget(receiverKey2, 1, IPC_EXCL | IPC_CREAT | 0666 );
     if (receiverSemId2 == -1) { 
         if (errno == EEXIST) { 
