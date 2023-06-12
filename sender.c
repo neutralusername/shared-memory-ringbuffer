@@ -148,14 +148,14 @@ int main(int argc, char *argv[]){
     while((c = getchar()) != EOF) {
         struct sembuf writeableElementsDecrease = {.sem_num = 0, .sem_op = -1, .sem_flg = 0};
         if (semop(writeableElementsSemId, &writeableElementsDecrease, 1) == -1) {
-            printf("semop lock failed\n");
+            printf("semop writeableElementsDecrease failed\n");
             exit(1);
         }
         buffer[*senderIndex] = c;
         *senderIndex = (*senderIndex + 1) % bufferSize;
         struct sembuf readableElementsIncrease = {.sem_num = 0, .sem_op = 1, .sem_flg = 0};
         if (semop(readableElementsSemId, &readableElementsIncrease, 1) == -1) {
-            printf("semop unlock failed\n");
+            printf("semop readableElementsIncrease failed\n");
             exit(1);
         }
     }
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]){
     buffer[*senderIndex] = EOF;
     struct sembuf sembuf2 = {.sem_num = 0, .sem_op = 1, .sem_flg = 0};
     if (semop(readableElementsSemId, &sembuf2, 1) == -1) {
-        printf("semop unlock failed\n");
+        printf("semop eof failed\n");
         exit(1);
     }
 

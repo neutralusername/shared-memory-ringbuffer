@@ -148,7 +148,7 @@ int main(int argc, char *argv[]){
     while(1) {
         struct sembuf readableElementsDecrease = {.sem_num = 0, .sem_op = -1, .sem_flg = 0};
         if (semop(readableElementsSemId, &readableElementsDecrease, 1) == -1) {
-            printf("semop lock failed\n");
+            printf("semop readableElementsDecrease failed\n");
             exit(1);
         }
 
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]){
 
         struct sembuf writeableElementsIncrease = {.sem_num = 0, .sem_op = 1, .sem_flg = 0};
         if (semop(writeableElementsSemId, &writeableElementsIncrease, 1) == -1) {
-            printf("semop unlock failed\n");
+            printf("semop writeableElementsIncrease failed\n");
             exit(1);
         }
     }
